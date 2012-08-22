@@ -163,7 +163,19 @@ public abstract class AbstractSpatialFieldType<T extends SpatialStrategy> extend
   }
 
   private Query getQueryFromSpatialArgs(QParser parser, SchemaField field, SpatialArgs spatialArgs) {
-    SpatialStrategy spatialStrategy = fieldStrategyMap.get(field.getName());
+    T spatialStrategy = fieldStrategyMap.get(field.getName());
+
+    //double-checked locking idiom
+    if (spatialStrategy == null) {
+      synchronized (fieldStrategyMap) {
+        spatialStrategy = fieldStrategyMap.get(field.getName());
+        if (spatialStrategy == null) {
+          spatialStrategy = newSpatialStrategy(field.getName());
+          fieldStrategyMap.put(field.getName(),spatialStrategy);
+        }
+      }
+    }
+
     //see SOLR-2883 needScore
     SolrParams localParams = parser.getLocalParams();
     if (localParams == null || localParams.getBool("needScore", true)) {
