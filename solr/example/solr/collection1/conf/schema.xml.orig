@@ -675,12 +675,11 @@
     <!-- A specialized field for geospatial search. If indexed, this fieldType must not be multivalued. -->
     <fieldType name="location" class="solr.LatLonType" subFieldSuffix="_coordinate"/>
 
-    <!-- An alternative geospatial field type new to Solr 4.  It supports multiValued and polygon shapes.
-    For more information about this and other Spatial fields new to Solr 4, see:
-    http://wiki.apache.org/solr/SolrAdaptersForLuceneSpatial4
-     -->
-    <fieldType name="location_2d_trie" class="solr.SpatialRecursivePrefixTreeFieldType"
-               distErrPct="0.025" maxDetailDist="0.001" />
+   <!--
+    A Geohash is a compact representation of a latitude longitude pair in a single field.
+    See http://wiki.apache.org/solr/SpatialSearch
+   -->
+    <fieldtype name="geohash" class="solr.GeoHashField"/>
 
    <!-- Money/currency field type. See http://wiki.apache.org/solr/MoneyFieldType
         Parameters:
