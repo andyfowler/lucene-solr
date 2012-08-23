@@ -92,17 +92,8 @@ public abstract class AbstractSpatialFieldType<T extends SpatialStrategy> extend
 
     IndexableField[] indexableFields = null;
     if (field.indexed()) {
-      T strategy = fieldStrategyMap.get(field.getName());
-      //double-checked locking idiom
-      if (strategy == null) {
-        synchronized (fieldStrategyMap) {
-          strategy = fieldStrategyMap.get(field.getName());
-          if (strategy == null) {
-            strategy = newSpatialStrategy(field.getName());
-            fieldStrategyMap.put(field.getName(),strategy);
-          }
-        }
-      }
+      T strategy = getStrategy(field.getName(), fieldStrategyMap);
+
       indexableFields = strategy.createIndexableFields(shape);
     }
 
@@ -163,18 +154,7 @@ public abstract class AbstractSpatialFieldType<T extends SpatialStrategy> extend
   }
 
   private Query getQueryFromSpatialArgs(QParser parser, SchemaField field, SpatialArgs spatialArgs) {
-    T spatialStrategy = fieldStrategyMap.get(field.getName());
-
-    //double-checked locking idiom
-    if (spatialStrategy == null) {
-      synchronized (fieldStrategyMap) {
-        spatialStrategy = fieldStrategyMap.get(field.getName());
-        if (spatialStrategy == null) {
-          spatialStrategy = newSpatialStrategy(field.getName());
-          fieldStrategyMap.put(field.getName(),spatialStrategy);
-        }
-      }
-    }
+    T spatialStrategy = getStrategy(field.getName(), fieldStrategyMap);
 
     //see SOLR-2883 needScore
     SolrParams localParams = parser.getLocalParams();
@@ -188,6 +168,21 @@ public abstract class AbstractSpatialFieldType<T extends SpatialStrategy> extend
       }
       return new ConstantScoreQuery(filter);
     }
+  }
+
+  private final T getStrategy(final String name, final ConcurrentHashMap<String, T> strategyMap) {
+    T strategy = strategyMap.get(name);
+    //double-checked locking idiom
+    if (strategy == null) {
+      synchronized (strategyMap) {
+        strategy = strategyMap.get(name);
+        if (strategy == null) {
+          strategy = newSpatialStrategy(name);
+          strategyMap.put(name,strategy);
+        }
+      }
+    }
+    return strategy;
   }
 
   @Override
